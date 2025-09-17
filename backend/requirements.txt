@@ -4,11 +4,12 @@
 
 fastapi==0.95.2
 uvicorn[standard]==0.22.0
-instagrapi==1.23.4   # اگر نسخه تغییر کرد، به آخرین نسخه فعال نگاه کنید
+instagrapi   # اگر نسخه تغییر کرد، به آخرین نسخه فعال نگاه کنید
 pydantic==1.10.7
-aiohttp==3.8.4
+aiohttp==3.9.5
 sqlalchemy==1.4.52
 databases==0.5.6
 python-multipart==0.0.6
 requests==2.31.0
-PyYAML==6.0
+PyYAML
+Pillow>=8.1.1
