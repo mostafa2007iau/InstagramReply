@@ -1,11 +1,11 @@
 """
 media.py
-روت‌هایی برای لیست کردن مدیاها (پست، ریلز) صاحب اکانت و جزئیات آنها
+روت‌هایی برای لیست کردن مدیاها (پست، ریلز) صاحب اکانت
 """
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from ..services.insta_client import InstaClient
+from app.services.insta_client import InstaClient
 import yaml, os
 
 router = APIRouter(prefix="/media", tags=["media"])
@@ -21,23 +21,14 @@ class MediaListResp(BaseModel):
 @router.get("/list")
 async def list_media():
     """
-    لیست مدیاهای صاحب اکانت (Returns list of own recent media)
+    لیست مدیاهای صاحب اکانت
     """
     cfg = load_config()
     client = InstaClient(cfg)
     client.load_session()
 
-    # گرفتن user_id از username
-    username = cfg.get("username")
-    if not username:
-        raise HTTPException(status_code=400, detail="username not set in config.yaml")
+    medias = client.get_own_recent_media(limit=50)
 
-    user_id = client.cl.user_id_from_username(username)
-
-    # استفاده از user_medias_v1 (پایدارتر از get_own_recent_media)
-    medias = client.cl.user_medias_v1(user_id, amount=50)
-
-    # تبدیل به خروجی ساده
     result = []
     for m in medias:
         result.append(
