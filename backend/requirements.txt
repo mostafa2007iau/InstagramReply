@@ -1,0 +1,14 @@
+# pip install -r requirements.txt
+# این فایل وابستگی‌های پایه را مشخص می‌کند
+# (This file lists base dependencies)
+
+fastapi==0.95.2
+uvicorn[standard]==0.22.0
+instagrapi==1.23.4   # اگر نسخه تغییر کرد، به آخرین نسخه فعال نگاه کنید
+pydantic==1.10.7
+aiohttp==3.8.4
+sqlalchemy==1.4.52
+databases==0.5.6
+python-multipart==0.0.6
+requests==2.31.0
+PyYAML==6.0
