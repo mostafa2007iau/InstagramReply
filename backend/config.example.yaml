@@ -1,0 +1,29 @@
+# config.example.yaml
+# پیکربندی نمونه برای سرویس backend
+# (Sample configuration for backend service)
+#
+# توجه: این فایل را کپی کن و به config.yaml تغییر نام بده سپس مقادیر را پر کن.
+# (Copy this file to config.yaml and fill values)
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+
+instagram:
+  username: "YOUR_IG_USERNAME"         # نام کاربری اینستاگرام (Instagram username)
+  password: "YOUR_IG_PASSWORD"         # رمز عبور (Instagram password)
+  session_file: "./session.json"       # مسیر ذخیره session (session persistence file)
+  use_proxy: false                     # فعال کردن پروکسی (enable proxy support)
+  proxy: "http://user:pass@1.2.3.4:8080" # نمونه پروکسی (proxy example)
+
+poller:
+  poll_interval_seconds: 30            # فاصله polling برای چک کردن کامنت ها (polling interval)
+  random_delay_min_ms: 8000            # حداقل تاخیر (ms) بین عملیات حساس (min random delay)
+  random_delay_max_ms: 15000           # حداکثر تاخیر (ms) بین عملیات حساس (max random delay)
+
+throttle:
+  per_user_cooldown_seconds: 3600      # cooldown برای هر کاربر (per-user cooldown)
+  global_hourly_limit: 100             # ماکزیمم عملیات در ساعت (global hourly limit)
+
+security:
+  webhook_verify_token: "change-me"    # توکن تستی برای webhook verification (not used initially)
