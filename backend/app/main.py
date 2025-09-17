@@ -1,37 +1,40 @@
 """
 main.py
-ورودی اصلی سرویس FastAPI
-(Main entrypoint for the FastAPI service)
+ورودی اصلی سرویس FastAPI — اکنون با mount کردن روترهای auth/media/comments/admin
+(Main entrypoint for FastAPI with routers)
 """
 
-# pip: install uvicorn fastapi
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-# از ماژول‌های داخلی سرویس استفاده خواهد شد (در پیام‌های بعدی اضافه می‌شوند)
-# (Internal service modules will be added in subsequent messages)
+from .api import auth, media, comments, admin  # relative imports
+import yaml, os
 
 app = FastAPI(title="InstagramReply Backend",
-              description="Backend service that wraps instagrapi and exposes REST endpoints (It will handle login, media listing, comment polling and actions).",
+              description="Backend service that wraps instagrapi and exposes REST endpoints.",
               version="0.1.0")
 
-# CORS policy برای ارتباط با کلاینت MAUI در زمان توسعه
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # در production محدودش کن
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# load config file presence check
+cfg_path = os.path.join(os.path.dirname(__file__), "..", "..", "config.yaml")
+if not os.path.exists(cfg_path):
+    # copy example if exists
+    example = os.path.join(os.path.dirname(__file__), "..", "..", "config.example.yaml")
+    if os.path.exists(example):
+        import shutil
+        shutil.copy(example, cfg_path)
+
+app.include_router(auth.router)
+app.include_router(media.router)
+app.include_router(comments.router)
+app.include_router(admin.router)
+
 @app.get("/health")
 async def health():
-    """
-    Health endpoint
-    بازگشت وضعیت سالم بودن سرویس
-    (Return service health status)
-    """
     return {"status": "ok"}
-
-# Routers و لود سرویس‌ها در فایل‌های بعدی اضافه خواهد شد
-# (Routers and service wiring will be added in subsequent messages)
