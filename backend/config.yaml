@@ -12,7 +12,7 @@ server:
 instagram:
   username: "YOUR_IG_USERNAME"         # نام کاربری اینستاگرام (Instagram username)
   password: "YOUR_IG_PASSWORD"         # رمز عبور (Instagram password)
-  session_file: "./session.json"       # مسیر ذخیره session (session persistence file)
+  sessionid_file: "./sessions/sessionid_<username>.txt"       # مسیر ذخیره session (session persistence file)
   use_proxy: false                     # فعال کردن پروکسی (enable proxy support)
   proxy: "http://user:pass@1.2.3.4:8080" # نمونه پروکسی (proxy example)
 
