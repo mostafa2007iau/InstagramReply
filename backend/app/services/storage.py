@@ -18,6 +18,7 @@ class Storage:
     """
     Storage
     - مدیریت ساده روی SQLite: جداول rules و processed_comments
+    - الان بر اساس username هم داده‌ها جدا ذخیره می‌شوند
     """
     def __init__(self, db_file: str = DB_FILE):
         self.db_file = db_file
@@ -29,6 +30,7 @@ class Storage:
             cur.execute("""
             CREATE TABLE IF NOT EXISTS rules (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
                 media_id TEXT NOT NULL,
                 patterns TEXT NOT NULL, -- JSON array
                 reply_text TEXT,
@@ -39,6 +41,7 @@ class Storage:
             cur.execute("""
             CREATE TABLE IF NOT EXISTS processed_comments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
                 comment_id TEXT UNIQUE,
                 media_id TEXT,
                 processed_at INTEGER
@@ -46,21 +49,29 @@ class Storage:
             """)
             conn.commit()
 
-    def add_rule(self, media_id: str, patterns: List[str], reply_text: str, direct_text: str, cooldown_seconds: int = 3600) -> int:
+    def add_rule(self, username: str, media_id: str, patterns: List[str], reply_text: str, direct_text: str, cooldown_seconds: int = 3600) -> int:
         with lock, sqlite3.connect(self.db_file) as conn:
             cur = conn.cursor()
-            cur.execute("INSERT INTO rules (media_id, patterns, reply_text, direct_text, cooldown_seconds) VALUES (?, ?, ?, ?, ?)",
-                        (media_id, json.dumps(patterns, ensure_ascii=False), reply_text, direct_text, cooldown_seconds))
+            cur.execute("""
+                INSERT INTO rules (username, media_id, patterns, reply_text, direct_text, cooldown_seconds)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (username, media_id, json.dumps(patterns, ensure_ascii=False), reply_text, direct_text, cooldown_seconds))
             conn.commit()
             return cur.lastrowid
 
-    def list_rules(self, media_id: Optional[str] = None) -> List[Dict]:
+    def list_rules(self, username: str, media_id: Optional[str] = None) -> List[Dict]:
         with lock, sqlite3.connect(self.db_file) as conn:
             cur = conn.cursor()
             if media_id:
-                cur.execute("SELECT id, media_id, patterns, reply_text, direct_text, cooldown_seconds FROM rules WHERE media_id = ?", (media_id,))
+                cur.execute("""
+                    SELECT id, media_id, patterns, reply_text, direct_text, cooldown_seconds
+                    FROM rules WHERE username = ? AND media_id = ?
+                """, (username, media_id))
             else:
-                cur.execute("SELECT id, media_id, patterns, reply_text, direct_text, cooldown_seconds FROM rules")
+                cur.execute("""
+                    SELECT id, media_id, patterns, reply_text, direct_text, cooldown_seconds
+                    FROM rules WHERE username = ?
+                """, (username,))
             rows = cur.fetchall()
             out = []
             for r in rows:
@@ -74,15 +85,19 @@ class Storage:
                 })
             return out
 
-    def mark_comment_processed(self, comment_id: str, media_id: str):
+    def mark_comment_processed(self, username: str, comment_id: str, media_id: str):
         with lock, sqlite3.connect(self.db_file) as conn:
             cur = conn.cursor()
-            cur.execute("INSERT OR IGNORE INTO processed_comments (comment_id, media_id, processed_at) VALUES (?, ?, ?)",
-                        (comment_id, media_id, int(time.time())))
+            cur.execute("""
+                INSERT OR IGNORE INTO processed_comments (username, comment_id, media_id, processed_at)
+                VALUES (?, ?, ?, ?)
+            """, (username, comment_id, media_id, int(time.time())))
             conn.commit()
 
-    def is_comment_processed(self, comment_id: str) -> bool:
+    def is_comment_processed(self, username: str, comment_id: str) -> bool:
         with lock, sqlite3.connect(self.db_file) as conn:
             cur = conn.cursor()
-            cur.execute("SELECT 1 FROM processed_comments WHERE comment_id = ?", (comment_id,))
+            cur.execute("""
+                SELECT 1 FROM processed_comments WHERE username = ? AND comment_id = ?
+            """, (username, comment_id))
             return cur.fetchone() is not None
