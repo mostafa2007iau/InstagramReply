@@ -3,7 +3,7 @@ media.py
 روت‌هایی برای لیست کردن مدیاها (پست، ریلز) صاحب اکانت
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from app.services.insta_client import InstaClient
 import yaml, os
@@ -19,13 +19,21 @@ class MediaListResp(BaseModel):
 
 
 @router.get("/list")
-async def list_media():
+async def list_media(username: str = Query(..., description="Instagram username")):
     """
     لیست مدیاهای صاحب اکانت
+    - username را از querystring می‌گیرد
+    - sessionid مربوط به همان اکانت را لود می‌کند
     """
     cfg = load_config()
+    cfg["instagram"]["username"] = username
+    cfg["instagram"]["sessionid_file"] = f"./sessions/sessionid_{username}.txt"
+
     client = InstaClient(cfg)
-    client.load_session()
+    try:
+        client.load_session()
+    except Exception as ex:
+        raise HTTPException(status_code=401, detail=f"Authentication failed: {ex}")
 
     medias = client.get_own_recent_media(limit=50)
 
@@ -33,10 +41,10 @@ async def list_media():
     for m in medias:
         result.append(
             MediaListResp(
-                id=str(m.pk),
-                media_type=str(m.media_type),
-                caption=(m.caption_text or ""),
-                thumbnail_url=(m.thumbnail_url or ""),
+                id=str(m["id"]),
+                media_type=str(m["media_type"]),
+                caption=(m["caption"] or ""),
+                thumbnail_url=(m["thumbnail_url"] or ""),
             )
         )
     return result
