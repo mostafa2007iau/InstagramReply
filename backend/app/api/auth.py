@@ -20,24 +20,38 @@ class LoginRequest(BaseModel):
 async def login(req: LoginRequest):
     """
     Login endpoint
-    - تلاش برای لاگین و در صورت موفقیت session را ذخیره می‌کند
-    (Attempts login; on success session is persisted)
+    - بار اول: لاگین با username/password و ذخیره sessionid
+    - دفعات بعد: فقط از sessionid استفاده می‌کند
     """
     cfg = load_config()
+    # تزریق username/password به config
+    cfg["instagram"]["username"] = req.username
+    cfg["instagram"]["password"] = req.password
+    cfg["instagram"]["sessionid_file"] = f"./sessions/sessionid_{req.username}.txt"
+
     client = InstaClient(cfg)
     try:
-        client.login(req.username, req.password)
-        return {"ok": True}
+        client.load_session()
+        return {"ok": True, "message": "Login successful, session ready."}
     except Exception as ex:
         raise HTTPException(status_code=400, detail=str(ex))
 
 @router.get("/status")
-async def status():
-    """برمی‌گرداند که آیا session وجود دارد یا خیر (Return whether session exists)."""
+async def status(username: str):
+    """
+    بررسی وضعیت لاگین برای یک اکانت خاص
+    (Check if session exists and is authenticated for given username)
+    """
     cfg = load_config()
+    cfg["instagram"]["username"] = username
+    cfg["instagram"]["sessionid_file"] = f"./sessions/sessionid_{username}.txt"
+
     client = InstaClient(cfg)
-    client.load_session()
-    return {"is_authenticated": client.client.authenticated}
+    try:
+        client.load_session()
+        return {"is_authenticated": client.client.authenticated}
+    except Exception:
+        return {"is_authenticated": False}
 
 def load_config():
     with open(os.path.join(os.path.dirname(__file__), "..", "..", "config.yaml")) as f:
