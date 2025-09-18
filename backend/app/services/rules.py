@@ -38,26 +38,35 @@ class RulesEngine:
     def __init__(self, storage):
         self.storage = storage
 
-    def get_rules_for_media(self, media_id: str) -> List[Rule]:
-        """بازگرداندن لیست قوانینی که به یک media خاص مربوط‌اند (Return rules for a media)."""
-        raw = self.storage.list_rules(media_id)
+    def get_rules_for_media(self, username: str, media_id: str) -> List[Rule]:
+        """بازگرداندن لیست قوانینی که به یک media خاص و یک اکانت خاص مربوط‌اند."""
+        raw = self.storage.list_rules(username, media_id)
         rules = []
         for r in raw:
-            rules.append(Rule(r["id"], r["media_id"], r["patterns"], r["reply_text"], r["direct_text"], r.get("cooldown_seconds", 3600)))
+            rules.append(
+                Rule(
+                    r["id"],
+                    r["media_id"],
+                    r["patterns"],
+                    r["reply_text"],
+                    r["direct_text"],
+                    r.get("cooldown_seconds", 3600),
+                )
+            )
         return rules
 
-    def match(self, text: str, media_id: str) -> Optional[Rule]:
-        """بررسی متن در برابر قوانین media و بازگشت rule اول matchشده (Return first matching rule)."""
-        rules = self.get_rules_for_media(media_id)
+    def match(self, text: str, media_id: str, username: str) -> Optional[Rule]:
+        """بررسی متن در برابر قوانین media برای یک اکانت خاص و بازگشت rule اول match‌شده."""
+        rules = self.get_rules_for_media(username, media_id)
         for r in rules:
             for p in r.patterns:
                 try:
                     if re.search(p, text, re.IGNORECASE):
-                        logger.info("Matched rule %s for media %s", r.id, media_id)
+                        logger.info("Matched rule %s for media %s (user=%s)", r.id, media_id, username)
                         return r
                 except re.error:
                     # treat pattern as plain substring if regex invalid
                     if p.lower() in text.lower():
-                        logger.info("Matched substring rule %s for media %s", r.id, media_id)
+                        logger.info("Matched substring rule %s for media %s (user=%s)", r.id, media_id, username)
                         return r
         return None
